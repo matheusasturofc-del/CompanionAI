@@ -1,0 +1,27 @@
+# ------------------------------------------------------------
+#  CompanionAI - configuracao
+#  (o nome do plugin e "CompanionAI" de proposito: se o seu amigo
+#   digitar /plugins, ele so vai ver um "mod de IA para cachorros")
+# ------------------------------------------------------------
+
+# Nome mostrado no chat quando o cachorro ainda nao tem nome
+nome-sem-nome: "???"
+
+# Formato da mensagem no chat quando voce fala pelo cachorro.
+# {nome} = nome do cachorro, {mensagem} = o que voce digitou
+formato-chat: "<{nome}> {mensagem}"
+
+# Quanto tempo o balao de fala fica em cima do cachorro (segundos)
+balao-segundos-min: 3
+balao-segundos-max: 12
+
+# Quando voce vira um cachorro NOVO (selvagem), seu amigo pode te
+# domesticar com ossos. Chance de 1 em N por osso.
+chance-domesticar: 3
+
+# Tamanho do seu personagem (a camera fica na altura certa)
+escala-cachorro: 0.42
+escala-monstro: 1.73
+
+# O monstro rosna sozinho de vez em quando? (1 em N por tick, 0 = nunca)
+monstro-rosnado-chance: 300

@@ -1,0 +1,10 @@
+name: CompanionAI
+version: '${version}'
+main: dev.companionai.CompanionAI
+api-version: '1.21'
+description: Cachorros com IA conversacional para deixar o mundo mais imersivo.
+authors: [CompanionAI]
+permissions:
+  companionai.admin:
+    description: Acesso aos comandos /horror e ao painel secreto
+    default: op
