@@ -1,6 +1,7 @@
 package dev.companionai;
 
 import dev.companionai.monster.MonsterManager;
+import dev.companionai.monster.StalkerManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -18,6 +19,8 @@ public final class CompanionAI extends JavaPlugin {
     private MonsterManager monsters;
     private TextPrompt prompts;
     private AdminPanel panel;
+    private Actions actions;
+    private StalkerManager stalkers;
 
     private NamespacedKey panelKey;
     private NamespacedKey possessedKey;
@@ -39,6 +42,8 @@ public final class CompanionAI extends JavaPlugin {
         possession = new PossessionManager(this);
         prompts = new TextPrompt(this);
         panel = new AdminPanel(this);
+        actions = new Actions(this);
+        stalkers = new StalkerManager(this);
 
         var pm = getServer().getPluginManager();
         pm.registerEvents(vanish, this);
@@ -52,6 +57,7 @@ public final class CompanionAI extends JavaPlugin {
         // Ordem importa: primeiro o cachorro segue o jogador, depois o monstro segue o cachorro.
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             possession.tick();
+            stalkers.tick();
             monsters.tick();
         }, 1L, 1L);
         Bukkit.getScheduler().runTaskTimer(this, Dogs::refreshNameCache, 1L, 20L);
@@ -68,6 +74,7 @@ public final class CompanionAI extends JavaPlugin {
     @Override
     public void onDisable() {
         if (possession != null) possession.stopAll();
+        if (stalkers != null) stalkers.removeAll();
         if (monsters != null) monsters.shutdown();
         if (vanish != null) vanish.shutdown();
     }
@@ -96,6 +103,8 @@ public final class CompanionAI extends JavaPlugin {
     public MonsterManager monsters() { return monsters; }
     public TextPrompt prompts() { return prompts; }
     public AdminPanel panel() { return panel; }
+    public Actions actions() { return actions; }
+    public StalkerManager stalkers() { return stalkers; }
     public NamespacedKey panelKey() { return panelKey; }
     public NamespacedKey possessedKey() { return possessedKey; }
     public NamespacedKey monsterKey() { return monsterKey; }

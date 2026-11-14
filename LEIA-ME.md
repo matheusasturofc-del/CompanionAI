@@ -10,20 +10,59 @@ um "mod de cachorro com IA".
    senão ele vê o comando /horror e o painel.
 
 ## Comandos (só para op)
+Digite `/horror` para ver a lista organizada (clique numa linha para escrever o comando).
+
+**Cachorro**
 | Comando | O que faz |
 |---|---|
 | `/horror turn cachorro` | Vira um cachorro selvagem novo (ele pode te domesticar com ossos) |
 | `/horror turn cachorro <nome>` | Entra num cachorro que já existe |
 | `/horror sair` | Sai do cachorro (continua invisível) |
-| `/horror rename <atual> to <novo>` | Renomeia um cachorro |
-| `/horror monsterform [nome]` | Liga/desliga a forma de monstro |
-| `/horror sentar` | Senta/levanta quando você está no cachorro (ou aperte **Shift**) |
+| `/horror sentar` | Senta/levanta (ou aperte **Shift**) |
 | `/horror ver` | Mostra/esconde o cachorro na SUA tela (para se ver no F5) |
-| `/horror rugir` | Rugido do monstro: som alto + escuridão em quem está perto |
+| `/horror rename <atual> to <novo>` | Renomeia um cachorro |
+
+**Monstro**
+| Comando | O que faz |
+|---|---|
+| `/horror monsterform [nome]` | Liga/desliga a forma de monstro |
+| `/horror rugir` | Rugido alto + escuridão em quem está perto |
+| `/horror perseguidor <jogador>` | O monstro aparece parado ao longe encarando ele e some quando ele olha |
+
+**Jogadores**
+| Comando | O que faz |
+|---|---|
 | `/horror efeito <jogador> <efeito> [segundos] [nível]` | Dá um efeito (0 segundos = infinito) |
-| `/horror limpar <jogador>` | Tira todos os efeitos dele |
+| `/horror limpar <jogador>` | Tira todos os efeitos |
+| `/horror susto <jogador> <tipo>` | caverna, passos, rosnado, raio, jumpscare, porta, vidro, grito |
+| `/horror titulo <jogador> <texto>` | Texto grande só na tela dele |
+| `/horror sussurro <jogador> <texto>` | O cachorro manda mensagem que só ele vê |
+| `/horror olhar <jogador>` | Vira a cabeça dele para o seu cachorro/monstro |
+| `/horror tp <jogador>` / `/horror trazer <jogador>` | Ir até ele / trazer ele para a sua frente |
+
+**Mundo**
+| Comando | O que faz |
+|---|---|
+| `/horror clima <sol\|chuva\|tempestade>` | Muda o clima |
+| `/horror hora <manha\|meiodia\|pordosol\|noite\|meianoite>` | Muda a hora |
+| `/horror congelar` | Congela/descongela a hora |
+
+**Outros**
+| Comando | O que faz |
+|---|---|
 | `/horror vanish` | Some/aparece com mensagem falsa de "saiu/entrou no jogo" |
-| `/horror painel` | Dá o item do painel (segure e clique com o botão ESQUERDO) |
+| `/horror painel` | Coloca o botão do painel no CANTO do inventário |
+
+## Painel
+Use `/horror painel`. O botão fica no **canto superior direito do inventário**:
+aperte **E** e clique nele. Também abre segurando o item e clicando com o botão esquerdo.
+O botão não cai no chão e volta se você morrer.
+
+- **Início**: status, categorias e atalhos rápidos.
+- **Cachorro & Monstro**: virar/entrar/sair, sentar, me ver (F5), renomear, monsterform, rugir.
+- **Jogadores** → escolha alguém: efeitos (duração e nível), tirar efeitos, TP, trazer,
+  olhar fixo, jumpscare, perseguidor, mensagem na tela, sussurro e **Todos os sustos**.
+- **Mundo**: clima, hora, congelar a hora.
 
 ## Como funciona
 - Quando você vira cachorro, aparece "VocêNick saiu do jogo" e você some do TAB,
@@ -40,22 +79,20 @@ um "mod de cachorro com IA".
   (sai a mensagem "VocêNick entrou no jogo" e você aparece do lado dele).
 
 ## Monsterform
-- Você **quebra blocos** (com Pressa II) e **morde jogadores** (6 de dano = 3 corações por padrão).
-- O monstro dá um bote (cabeça avança, boca abre) a cada mordida.
-- Se alguém morrer para você, a mensagem é "Fulano foi morto por <nome do cachorro>", nunca o seu nick.
+- Criatura branca de ~3 blocos com vértebras, costelas, joelhos, patas com garras,
+  dentes, gengiva vermelha e **olhos vermelhos que brilham no escuro**.
+- **Sangue**: manchas no peito, barriga, perna e pescoço, fios de sangue pingando
+  da boca, gotas caindo, rastro no chão quando anda e respingo quando morde.
+- Respira, entorta a cabeça quando parado, faz barulho de osso ao andar e ofega.
+- **Superforte**: mata um jogador em **3 mordidas** (ignora armadura) e empurra longe.
+- **Velocidade II** e **Pressa III** (minera muito rápido). Pode quebrar blocos.
+- Se alguém morrer para você, a mensagem cita o nome do cachorro, nunca o seu nick.
+- Tudo isso dá para ajustar no `config.yml` (hits para matar, velocidade, sangue...).
 - Dica: troque de slot antes de quebrar blocos (com o item do painel na mão o clique abre o menu).
 
 ## Efeitos disponíveis
 cegueira, escuridao, nausea, lentidao, cansaco, fraqueza, fome, veneno, wither,
 levitacao, brilho, pulo, velocidade, visao
-
-## Painel
-- **Início**: status, categorias e atalhos rápidos.
-- **Cachorro & Monstro**: virar/entrar/sair, sentar, me ver (F5), renomear, monsterform, rugir.
-- **Jogadores** → escolha alguém: efeitos (com duração e nível), tirar efeitos, TP até ele,
-  trazer ele até você, olhar fixo, e sustos (caverna, passos, rosnado, raio, jumpscare,
-  mensagem na tela, sussurro no chat que só ele vê).
-- **Mundo**: clima, hora, congelar a hora.
 
 ## Por que eu não me vejo como cachorro?
 De propósito: na sua tela o cachorro fica escondido, senão a cabeça dele tapa a câmera.

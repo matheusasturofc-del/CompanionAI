@@ -33,11 +33,17 @@ monstro-rosnado-chance: 300
 # ---------------- Forma de monstro ----------------
 # Na forma de monstro voce pode quebrar blocos?
 monstro-quebra-blocos: true
-# Dano de cada mordida do monstro (2 = 1 coracao)
-monstro-dano: 6.0
-# Nivel de Pressa (quebrar blocos rapido) e Velocidade do monstro (0 = desligado)
-monstro-pressa: 2
-monstro-velocidade: 1
+# Quantas mordidas para matar um jogador (ignora armadura). 0 = usa monstro-dano-mobs
+monstro-hits-para-matar: 3
+# Dano em mobs (zumbi, vaca...). 2 = 1 coracao
+monstro-dano-mobs: 10.0
+# Forca do empurrao quando o monstro morde (0 = sem empurrao)
+monstro-empurrao: 1.0
+# Nivel de Pressa (minerar rapido) e Velocidade do monstro (0 = desligado)
+monstro-pressa-nivel: 3
+monstro-velocidade-nivel: 2
+# Sangue pingando da boca, rastro no chao e respingo na mordida
+monstro-sangue: true
 
 # ---------------- Forma de cachorro ----------------
 # Na forma de cachorro (normal) voce pode morder?

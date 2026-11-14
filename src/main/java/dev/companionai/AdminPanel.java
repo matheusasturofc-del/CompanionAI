@@ -19,7 +19,11 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
@@ -89,7 +93,8 @@ public final class AdminPanel implements Listener {
         ItemStack item = new ItemStack(Material.ECHO_SHARD);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(text("Painel do Horror", NamedTextColor.DARK_PURPLE).decorate(TextDecoration.BOLD));
-        meta.lore(List.of(text("Clique ESQUERDO para abrir", NamedTextColor.GRAY)));
+        meta.lore(List.of(text("Aperte E e clique aqui", NamedTextColor.GRAY),
+                text("ou segure e clique com o ESQUERDO", NamedTextColor.GRAY)));
         meta.setEnchantmentGlintOverride(true);
         meta.getPersistentDataContainer().set(plugin.panelKey(), PersistentDataType.BYTE, (byte) 1);
         item.setItemMeta(meta);
@@ -101,15 +106,55 @@ public final class AdminPanel implements Listener {
                 && item.getItemMeta().getPersistentDataContainer().has(plugin.panelKey());
     }
 
+    /** Canto superior direito do inventário (aperte E e clique). */
+    public static final int CORNER_SLOT = 17;
+
+    /** Coloca o botão do painel no canto do inventário (move o que estiver lá). */
     public void givePanelItem(Player p) {
-        for (ItemStack it : p.getInventory().getContents()) {
-            if (isPanelItem(it)) {
-                CompanionAI.info(p, "Você já tem o item do painel. Segure e clique com o botão esquerdo.");
-                return;
-            }
+        PlayerInventory inv = p.getInventory();
+        for (int i = 0; i < inv.getSize(); i++) {
+            if (isPanelItem(inv.getItem(i))) inv.setItem(i, null);
         }
-        p.getInventory().addItem(panelItem());
-        CompanionAI.info(p, "Item do painel no seu inventário. Segure e clique com o botão ESQUERDO.");
+        ItemStack old = inv.getItem(CORNER_SLOT);
+        inv.setItem(CORNER_SLOT, panelItem());
+        if (old != null && !old.getType().isAir()) {
+            for (ItemStack left : inv.addItem(old).values()) p.getWorld().dropItem(p.getLocation(), left);
+        }
+        CompanionAI.info(p, "Botão do painel no CANTO do inventário: aperte E e clique nele.");
+        CompanionAI.info(p, "Também funciona segurando ele e clicando com o botão esquerdo.");
+    }
+
+    /** Aperte E e clique no botão do canto: abre o painel direto. */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onClickPanelInInventory(InventoryClickEvent e) {
+        if (!(e.getWhoClicked() instanceof Player p)) return;
+        if (e.getView().getTopInventory().getHolder() instanceof Menu) return;
+        boolean panel = isPanelItem(e.getCurrentItem()) || isPanelItem(e.getCursor());
+        if (!panel && e.getClick() == ClickType.NUMBER_KEY && e.getHotbarButton() >= 0) {
+            panel = isPanelItem(p.getInventory().getItem(e.getHotbarButton()));
+        }
+        if (!panel && e.getClick() == ClickType.SWAP_OFFHAND) {
+            panel = isPanelItem(p.getInventory().getItemInOffHand());
+        }
+        if (!panel) return;
+        e.setCancelled(true);
+        if (CompanionAI.isAdmin(p)) Bukkit.getScheduler().runTask(plugin, () -> openHome(p));
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onDropPanel(PlayerDropItemEvent e) {
+        if (isPanelItem(e.getItemDrop().getItemStack())) e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onDeathKeepPanel(PlayerDeathEvent e) {
+        if (e.getDrops().removeIf(this::isPanelItem) && CompanionAI.isAdmin(e.getPlayer())) {
+            UUID id = e.getPlayer().getUniqueId();
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                Player p = Bukkit.getPlayer(id);
+                if (p != null && !p.isDead()) givePanelItem(p);
+            }, 40L);
+        }
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -253,8 +298,8 @@ public final class AdminPanel implements Listener {
         label(m, 27, "Monstro");
         button(m, 28, Material.BONE_BLOCK, monster ? "Sair da monsterform" : "Virar monstro", NamedTextColor.DARK_RED,
                 List.of("No cachorro que você controla.",
-                        "Monstro quebra blocos e machuca",
-                        "jogadores (" + hearts(plugin.getConfig().getDouble("monstro-dano", 6.0)) + " por mordida)."), () -> {
+                        "Superforte: mata em " + plugin.getConfig().getInt("monstro-hits-para-matar", 3) + " mordidas,",
+                        "Velocidade e Pressa (minera rápido)."), () -> {
                     if (myWolf == null) CompanionAI.error(p, "Entre num cachorro primeiro.");
                     else toggleMonster(p, myWolf);
                     openForms(p);
@@ -403,70 +448,98 @@ public final class AdminPanel implements Listener {
 
         // --- Teleporte
         button(m, 32, Material.ENDER_PEARL, "TP até ele", NamedTextColor.DARK_AQUA,
-                List.of("Você vai até ele"), () -> {
-                    Player t = Bukkit.getPlayer(tid);
-                    if (t == null) return;
+                List.of("Você vai até ele"), () -> withTarget(tid, t -> {
                     p.closeInventory();
                     p.teleport(t.getLocation());
-                });
-        button(m, 33, Material.CHORUS_FRUIT, "Trazer ele até mim", NamedTextColor.DARK_AQUA,
-                List.of("Ele aparece onde você está", "(ex.: na frente do monstro)"), () -> {
-                    Player t = Bukkit.getPlayer(tid);
-                    if (t == null) return;
-                    p.closeInventory();
-                    Vector fwd = p.getLocation().getDirection().setY(0);
-                    if (fwd.lengthSquared() < 1e-4) fwd = new Vector(0, 0, 1);
-                    fwd.normalize();
-                    Location dest = p.getLocation().add(fwd.clone().multiply(3));
-                    dest.setDirection(fwd.clone().multiply(-1));
-                    t.teleport(dest);
-                });
-        button(m, 34, Material.ENDER_EYE, "Olhar fixo", NamedTextColor.DARK_AQUA,
-                List.of("Vira a cabeça dele para o", "cachorro que você controla"), () -> {
-                    Player t = Bukkit.getPlayer(tid);
-                    if (t != null) forceLook(p, t);
-                });
-
-        // --- Sustos
-        label(m, 36, "Sustos");
-        button(m, 37, Material.SCULK_SENSOR, "Som de caverna", NamedTextColor.DARK_GREEN,
-                List.of("Só ele escuta"), () -> withTarget(tid, t ->
-                        t.playSound(t.getLocation(), Sound.AMBIENT_CAVE, SoundCategory.AMBIENT, 1f, 1f)));
-        button(m, 38, Material.LEATHER_BOOTS, "Passos atrás dele", NamedTextColor.DARK_GREEN,
-                List.of("Só ele escuta"), () -> withTarget(tid, this::footsteps));
-        button(m, 39, Material.BONE_MEAL, "Rosnado atrás dele", NamedTextColor.DARK_GREEN,
-                List.of("Só ele escuta"), () -> withTarget(tid, t ->
-                        t.playSound(behind(t, 2.5), Sound.ENTITY_WOLF_GROWL, SoundCategory.HOSTILE, 1f, 0.55f)));
-        button(m, 40, Material.LIGHTNING_ROD, "Raio perto dele", NamedTextColor.DARK_GREEN,
-                List.of("Só o efeito, não machuca"), () -> withTarget(tid, t -> {
-                    ThreadLocalRandom r = ThreadLocalRandom.current();
-                    Location l = t.getLocation().add(r.nextDouble(-8, 8), 0, r.nextDouble(-8, 8));
-                    l.setY(t.getWorld().getHighestBlockYAt(l) + 1);
-                    t.getWorld().strikeLightningEffect(l);
                 }));
-        button(m, 41, Material.CARVED_PUMPKIN, "Jumpscare", NamedTextColor.DARK_GREEN,
-                List.of("Som alto + tela tremendo", "+ texto vermelho"), () -> withTarget(tid, this::jumpscare));
-        button(m, 42, Material.OAK_SIGN, "Mensagem na tela", NamedTextColor.DARK_GREEN,
+        button(m, 33, Material.CHORUS_FRUIT, "Trazer ele até mim", NamedTextColor.DARK_AQUA,
+                List.of("Ele aparece 3 blocos na sua frente", "(ex.: na frente do monstro)"), () -> withTarget(tid, t -> {
+                    p.closeInventory();
+                    plugin.actions().bring(p, t);
+                }));
+        button(m, 34, Material.ENDER_EYE, "Olhar fixo", NamedTextColor.DARK_AQUA,
+                List.of("Vira a cabeça dele para o", "cachorro que você controla"), () -> withTarget(tid, t -> {
+                    if (!plugin.actions().forceLook(p, t)) CompanionAI.error(p, "Entre num cachorro perto dele primeiro.");
+                }));
+
+        // --- Sustos (atalhos + tela com todos)
+        label(m, 36, "Sustos");
+        button(m, 37, Material.CARVED_PUMPKIN, "Jumpscare", NamedTextColor.DARK_GREEN,
+                List.of("Som alto + tela tremendo", "+ texto vermelho"), () -> withTarget(tid, plugin.actions()::jumpscare));
+        button(m, 38, Material.WITHER_SKELETON_SKULL, "Perseguidor", NamedTextColor.DARK_GREEN,
+                List.of("O monstro aparece parado ao longe", "encarando ele. Some quando ele", "olha direto ou chega perto."), () -> withTarget(tid, t -> {
+                    if (plugin.stalkers().spawn(t)) CompanionAI.actionBar(p, "Perseguidor perto de " + t.getName());
+                    else CompanionAI.error(p, "Não achei lugar para o monstro aparecer.");
+                }));
+        button(m, 39, Material.OAK_SIGN, "Mensagem na tela", NamedTextColor.DARK_GREEN,
                 List.of("Você digita, aparece grande", "só na tela dele"), () -> withTarget(tid, t ->
                         plugin.prompts().ask(p, "Mensagem na tela", "", msg -> {
-                            t.showTitle(Title.title(Component.text(msg, NamedTextColor.DARK_RED), Component.empty(),
-                                    Title.Times.times(Duration.ofMillis(300), Duration.ofSeconds(3), Duration.ofSeconds(1))));
-                            t.playSound(t.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.6f, 0.6f);
+                            withTarget(tid, tt -> plugin.actions().title(tt, msg));
                             reopen.accept(p);
                         })));
-        button(m, 43, Material.PAPER, "Sussurro no chat", NamedTextColor.DARK_GREEN,
+        button(m, 40, Material.PAPER, "Sussurro no chat", NamedTextColor.DARK_GREEN,
                 List.of("O cachorro manda uma mensagem", "que SÓ ele vê no chat"), () -> withTarget(tid, t ->
                         plugin.prompts().ask(p, "Sussurro no chat", "", msg -> {
-                            Wolf w = plugin.possession().wolfOf(p);
-                            String name = w != null ? Dogs.displayName(w, "???")
-                                    : plugin.getConfig().getString("nome-sem-nome", "???");
-                            t.sendMessage(Component.text("<" + name + "> ").append(Component.text(msg, NamedTextColor.GRAY)
-                                    .decorate(TextDecoration.ITALIC)));
+                            withTarget(tid, tt -> plugin.actions().whisper(p, tt, msg));
                             CompanionAI.info(p, "Sussurro enviado só para " + t.getName() + ".");
                             reopen.accept(p);
                         })));
+        button(m, 42, Material.CHEST, "Todos os sustos ▶", NamedTextColor.GREEN,
+                List.of("Sons (caverna, passos, porta,", "vidro, grito...), raio e mais"), () -> withTarget(tid, t -> openScares(p, t)));
 
         nav(m, p, this::openPlayers);
+        finish(m);
+        p.openInventory(m.inventory);
+    }
+
+    private void openScares(Player p, Player target) {
+        UUID tid = target.getUniqueId();
+        Menu m = menu("Sustos: " + target.getName());
+        m.inventory.setItem(4, head(target, List.of("Os sons só ele escuta")));
+        Consumer<Player> back = pl -> {
+            Player t = Bukkit.getPlayer(tid);
+            if (t != null) openPlayer(pl, t);
+            else openPlayers(pl);
+        };
+
+        label(m, 9, "Sons");
+        Material[] icons = {Material.SCULK_SENSOR, Material.LEATHER_BOOTS, Material.BONE_MEAL, Material.LIGHTNING_ROD,
+                Material.CARVED_PUMPKIN, Material.OAK_DOOR, Material.GLASS_PANE, Material.GHAST_TEAR};
+        int[] slots = {10, 11, 12, 19, 20, 13, 14, 15};
+        Actions.Scare[] scares = Actions.Scare.values();
+        for (int i = 0; i < scares.length; i++) {
+            Actions.Scare sc = scares[i];
+            button(m, slots[i], icons[i], sc.label, NamedTextColor.DARK_GREEN,
+                    List.of("/horror susto <jogador> " + sc.key()), () -> withTarget(tid, t -> {
+                        plugin.actions().scare(t, sc);
+                        CompanionAI.actionBar(p, sc.label + " em " + t.getName());
+                    }));
+        }
+        label(m, 18, "Visual");
+        button(m, 21, Material.WITHER_SKELETON_SKULL, "Perseguidor", NamedTextColor.DARK_GREEN,
+                List.of("Monstro aparece ao longe e some", "quando ele olha"), () -> withTarget(tid, t -> {
+                    if (plugin.stalkers().spawn(t)) CompanionAI.actionBar(p, "Perseguidor perto de " + t.getName());
+                    else CompanionAI.error(p, "Não achei lugar para o monstro aparecer.");
+                }));
+        button(m, 22, Material.ENDER_EYE, "Olhar fixo", NamedTextColor.DARK_GREEN,
+                List.of("Vira a cabeça dele para", "o seu cachorro/monstro"), () -> withTarget(tid, t -> {
+                    if (!plugin.actions().forceLook(p, t)) CompanionAI.error(p, "Entre num cachorro perto dele primeiro.");
+                }));
+        button(m, 23, Material.INK_SAC, "Apagão (5s)", NamedTextColor.DARK_GREEN,
+                List.of("Cegueira + escuridão rápida"), () -> withTarget(tid, t -> {
+                    Effects.CEGUEIRA.apply(t, 5, 1, false);
+                    Effects.ESCURIDAO.apply(t, 7, 1, false);
+                }));
+
+        label(m, 27, "Texto");
+        button(m, 28, Material.OAK_SIGN, "Mensagem na tela", NamedTextColor.DARK_GREEN,
+                List.of("Aparece grande só na tela dele"), () -> plugin.prompts().ask(p, "Mensagem na tela", "", msg ->
+                        withTarget(tid, t -> plugin.actions().title(t, msg))));
+        button(m, 29, Material.PAPER, "Sussurro no chat", NamedTextColor.DARK_GREEN,
+                List.of("O cachorro fala só com ele"), () -> plugin.prompts().ask(p, "Sussurro no chat", "", msg ->
+                        withTarget(tid, t -> plugin.actions().whisper(p, t, msg))));
+
+        nav(m, p, back);
         finish(m);
         p.openInventory(m.inventory);
     }
@@ -478,14 +551,14 @@ public final class AdminPanel implements Listener {
         World w = p.getWorld();
 
         label(m, 9, "Clima");
-        button(m, 11, Material.SUNFLOWER, "Sol", NamedTextColor.YELLOW, List.of(), () -> weather(p, false, false));
-        button(m, 12, Material.WATER_BUCKET, "Chuva", NamedTextColor.BLUE, List.of(), () -> weather(p, true, false));
-        button(m, 13, Material.LIGHTNING_ROD, "Tempestade", NamedTextColor.DARK_BLUE, List.of(), () -> weather(p, true, true));
+        button(m, 11, Material.SUNFLOWER, "Sol", NamedTextColor.YELLOW, List.of("/horror clima sol"), () -> weather(p, "sol"));
+        button(m, 12, Material.WATER_BUCKET, "Chuva", NamedTextColor.BLUE, List.of("/horror clima chuva"), () -> weather(p, "chuva"));
+        button(m, 13, Material.LIGHTNING_ROD, "Tempestade", NamedTextColor.DARK_BLUE, List.of("/horror clima tempestade"), () -> weather(p, "tempestade"));
 
         label(m, 27, "Hora");
-        button(m, 29, Material.CLOCK, "Manhã", NamedTextColor.YELLOW, List.of(), () -> time(p, 1000));
-        button(m, 30, Material.ORANGE_DYE, "Pôr do sol", NamedTextColor.GOLD, List.of(), () -> time(p, 12500));
-        button(m, 31, Material.BLACK_DYE, "Meia-noite", NamedTextColor.DARK_GRAY, List.of(), () -> time(p, 18000));
+        button(m, 29, Material.CLOCK, "Manhã", NamedTextColor.YELLOW, List.of("/horror hora manha"), () -> time(p, 1000));
+        button(m, 30, Material.ORANGE_DYE, "Pôr do sol", NamedTextColor.GOLD, List.of("/horror hora pordosol"), () -> time(p, 12500));
+        button(m, 31, Material.BLACK_DYE, "Meia-noite", NamedTextColor.DARK_GRAY, List.of("/horror hora meianoite"), () -> time(p, 18000));
         Boolean cycle = w.getGameRuleValue(GameRule.DO_DAYLIGHT_CYCLE);
         boolean running = cycle == null || cycle;
         button(m, 33, Material.DAYLIGHT_DETECTOR, running ? "Congelar a hora" : "Descongelar a hora", NamedTextColor.GOLD,
@@ -521,62 +594,14 @@ public final class AdminPanel implements Listener {
         if (t != null) action.accept(t);
     }
 
-    private void forceLook(Player p, Player t) {
-        Wolf wolf = plugin.possession().wolfOf(p);
-        if (wolf == null || !wolf.getWorld().equals(t.getWorld())) {
-            CompanionAI.error(p, "Entre num cachorro perto dele primeiro.");
-            return;
-        }
-        double height = plugin.monsters().isMonster(wolf) ? 2.8 : 0.5;
-        Location eye = t.getLocation();
-        Vector dir = wolf.getLocation().add(0, height, 0).toVector().subtract(t.getEyeLocation().toVector());
-        eye.setDirection(dir);
-        t.teleport(eye);
-    }
-
-    private void jumpscare(Player t) {
-        t.playSound(t.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, SoundCategory.HOSTILE, 1f, 0.5f);
-        t.playSound(t.getLocation(), Sound.ENTITY_WARDEN_ROAR, SoundCategory.HOSTILE, 1f, 1.2f);
-        t.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 100, 0, false, false, false));
-        t.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 60, 0, false, false, false));
-        t.showTitle(Title.title(Component.text("▓▓▓▓▓▓", NamedTextColor.DARK_RED),
-                Component.text("ele está aqui", NamedTextColor.RED),
-                Title.Times.times(Duration.ZERO, Duration.ofMillis(1500), Duration.ofMillis(500))));
-    }
-
-    private void weather(Player p, boolean rain, boolean thunder) {
-        World w = p.getWorld();
-        w.setStorm(rain);
-        w.setThundering(thunder);
-        w.setWeatherDuration(20 * 60 * 10);
-        if (thunder) w.setThunderDuration(20 * 60 * 10);
-        CompanionAI.actionBar(p, rain ? (thunder ? "Tempestade" : "Chuva") : "Sol");
+    private void weather(Player p, String kind) {
+        plugin.actions().weather(p.getWorld(), kind);
+        CompanionAI.actionBar(p, "Clima: " + kind);
     }
 
     private void time(Player p, long t) {
         p.getWorld().setTime(t);
         CompanionAI.actionBar(p, "Hora alterada");
-    }
-
-    private void footsteps(Player t) {
-        for (int i = 0; i < 6; i++) {
-            int step = i;
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                if (!t.isOnline()) return;
-                Location l = behind(t, 3.5 - step * 0.35);
-                Block below = l.clone().subtract(0, 1, 0).getBlock();
-                Sound s = below.getType().isAir() ? Sound.BLOCK_GRASS_STEP
-                        : below.getBlockData().getSoundGroup().getStepSound();
-                t.playSound(l, s, SoundCategory.PLAYERS, 0.9f, 0.9f);
-            }, i * 7L);
-        }
-    }
-
-    private static Location behind(Player t, double dist) {
-        Vector back = t.getLocation().getDirection().setY(0);
-        if (back.lengthSquared() < 1e-4) back = new Vector(0, 0, 1);
-        back.normalize().multiply(-dist);
-        return t.getLocation().add(back);
     }
 
     // ================================================================== helpers de tela

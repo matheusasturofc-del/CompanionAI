@@ -222,7 +222,7 @@ public final class PossessionManager implements Listener {
         CompanionAI.info(p, "Para voltar: /horror sair (ou pelo painel).");
         CompanionAI.info(p, "Você não vê o cachorro na sua tela (seu amigo vê). Para se ver no F5: /horror ver");
         if (s.sitting) CompanionAI.info(p, "Ele está SENTADO: aperte Shift para levantar.");
-        if (plugin.monsters().isMonster(wolf)) CompanionAI.info(p, "Forma de MONSTRO: você quebra blocos e machuca jogadores.");
+        if (plugin.monsters().isMonster(wolf)) CompanionAI.info(p, "Forma de MONSTRO: superforte, rápido e minera rápido.");
     }
 
     /** Ajusta tamanho/altura do jogador conforme forma (cachorro ou monstro). */
@@ -240,8 +240,8 @@ public final class PossessionManager implements Listener {
         p.removePotionEffect(PotionEffectType.HASTE);
         p.removePotionEffect(PotionEffectType.SPEED);
         if (monster) {
-            int haste = plugin.getConfig().getInt("monstro-pressa", 2);
-            int speed = plugin.getConfig().getInt("monstro-velocidade", 1);
+            int haste = plugin.getConfig().getInt("monstro-pressa-nivel", 3);
+            int speed = plugin.getConfig().getInt("monstro-velocidade-nivel", 2);
             if (haste > 0) p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, PotionEffect.INFINITE_DURATION, haste - 1, false, false, false));
             if (speed > 0) p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, speed - 1, false, false, false));
         }
@@ -543,6 +543,15 @@ public final class PossessionManager implements Listener {
         if (controller != null) toggleSit(controller, p.getName());
     }
 
+    @SuppressWarnings("deprecation")
+    private static void ignoreArmor(EntityDamageEvent e) {
+        for (EntityDamageEvent.DamageModifier mod : new EntityDamageEvent.DamageModifier[]{
+                EntityDamageEvent.DamageModifier.ARMOR, EntityDamageEvent.DamageModifier.MAGIC,
+                EntityDamageEvent.DamageModifier.RESISTANCE, EntityDamageEvent.DamageModifier.BLOCKING}) {
+            if (e.isApplicable(mod)) e.setDamage(mod, 0);
+        }
+    }
+
     private static double maxHealth(LivingEntity e) {
         AttributeInstance a = e.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         return a == null ? 20 : a.getValue();
@@ -609,12 +618,30 @@ public final class PossessionManager implements Listener {
             return;
         }
         if (plugin.monsters().isMonster(wolf)) {
-            // Monstro morde de verdade.
-            e.setDamage(plugin.getConfig().getDouble("monstro-dano", 6.0));
+            // Monstro superforte: mata jogadores em N mordidas (ignora armadura).
+            Entity victim = e.getEntity();
+            int hits = plugin.getConfig().getInt("monstro-hits-para-matar", 3);
+            if (victim instanceof Player vp && hits > 0) {
+                e.setDamage(maxHealth(vp) / hits + 0.1);
+                ignoreArmor(e);
+            } else {
+                e.setDamage(plugin.getConfig().getDouble("monstro-dano-mobs", 10.0));
+            }
+            double push = plugin.getConfig().getDouble("monstro-empurrao", 1.0);
+            if (push > 0) {
+                Vector dir = victim.getLocation().toVector().subtract(p.getLocation().toVector()).setY(0);
+                if (dir.lengthSquared() > 1e-4) {
+                    Vector kb = dir.normalize().multiply(push).setY(0.45);
+                    Bukkit.getScheduler().runTask(plugin, () -> victim.setVelocity(victim.getVelocity().add(kb)));
+                }
+            }
             wolf.getWorld().playSound(wolf.getLocation(), Sound.ENTITY_WOLF_GROWL, 1.2f, 0.5f);
             wolf.getWorld().playSound(e.getEntity().getLocation(), Sound.ENTITY_EVOKER_FANGS_ATTACK, 1f, 0.6f);
             MonsterRig rig = plugin.monsters().rig(wolf);
             if (rig != null) rig.attack();
+            if (plugin.getConfig().getBoolean("monstro-sangue", true)) {
+                MonsterRig.splatter(e.getEntity().getLocation().add(0, e.getEntity().getHeight() * 0.6, 0));
+            }
         } else if (plugin.getConfig().getBoolean("cachorro-morde", false)) {
             e.setDamage(plugin.getConfig().getDouble("cachorro-dano", 2.0));
             wolf.getWorld().playSound(wolf.getLocation(), Sound.ENTITY_WOLF_GROWL, 1f, 1.1f);
