@@ -34,6 +34,8 @@ um "mod de cachorro com IA".
 - Ele pode clicar no cachorro para mandar sentar/levantar, dar comida e colocar coleira
   (a coleira te puxa de verdade).
 - Quando ele domestica qualquer cachorro, abre uma tela para digitar o nome.
+  Se ele fechar sem digitar, o cachorro vira **WolfWN** (ou WolfWN2, WolfWN3...),
+  então você pode usar `/horror turn cachorro WolfWN`. Dá para mudar em `nome-padrao`.
 - Para "aparecer" no final: `/horror sair` e depois `/horror vanish`
   (sai a mensagem "VocêNick entrou no jogo" e você aparece do lado dele).
 

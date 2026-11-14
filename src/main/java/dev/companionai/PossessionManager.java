@@ -568,6 +568,12 @@ public final class PossessionManager implements Listener {
         plugin.prompts().ask(p, "Nome do cachorro", "", name -> {
             if (!wolf.isValid()) return;
             plugin.monsters().setDogName(wolf, name);
+        }, () -> {
+            // Fechou sem dar nome: recebe o nome padrão (ex.: WolfWN, WolfWN2...).
+            if (!wolf.isValid() || Dogs.plainName(wolf) != null) return;
+            String base = plugin.getConfig().getString("nome-padrao", "WolfWN");
+            if (base == null || base.isBlank()) return;
+            plugin.monsters().setDogName(wolf, Dogs.uniqueName(base.trim()));
         });
     }
 

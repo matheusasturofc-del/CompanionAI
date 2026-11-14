@@ -64,6 +64,15 @@ public final class Dogs {
         return best;
     }
 
+    /** "WolfWN", e se já existir: "WolfWN2", "WolfWN3"... */
+    public static String uniqueName(String base) {
+        if (findByName(base, null) == null) return base;
+        for (int i = 2; ; i++) {
+            String candidate = base + i;
+            if (findByName(candidate, null) == null) return candidate;
+        }
+    }
+
     public static String ownerName(Wolf w) {
         AnimalTamer owner = w.getOwner();
         if (owner == null) return "ninguém (selvagem)";

@@ -7,6 +7,10 @@
 # Nome mostrado no chat quando o cachorro ainda nao tem nome
 nome-sem-nome: "???"
 
+# Se seu amigo fechar a tela de nome sem digitar nada, o cachorro recebe
+# este nome (se ja existir, vira WolfWN2, WolfWN3...). Deixe "" para nao dar nome.
+nome-padrao: "WolfWN"
+
 # Formato da mensagem no chat quando voce fala pelo cachorro.
 # {nome} = nome do cachorro, {mensagem} = o que voce digitou
 formato-chat: "<{nome}> {mensagem}"

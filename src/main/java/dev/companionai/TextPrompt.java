@@ -31,11 +31,13 @@ public final class TextPrompt implements Listener {
 
     private static final class Session {
         final Consumer<String> onDone;
+        final Runnable onCancel;
         final Inventory top;
         String result;
 
-        Session(Consumer<String> onDone, Inventory top) {
+        Session(Consumer<String> onDone, Runnable onCancel, Inventory top) {
             this.onDone = onDone;
+            this.onCancel = onCancel;
             this.top = top;
         }
     }
@@ -48,6 +50,11 @@ public final class TextPrompt implements Listener {
     }
 
     public void ask(Player p, String title, String initial, Consumer<String> onDone) {
+        ask(p, title, initial, onDone, null);
+    }
+
+    /** @param onCancel chamado se a pessoa fechar sem digitar nada (pode ser null) */
+    public void ask(Player p, String title, String initial, Consumer<String> onDone, Runnable onCancel) {
         // A janela da bigorna só cabe ~18 letras no título.
         String shortTitle = title.length() > 18 ? title.substring(0, 17).trim() + "…" : title;
         AnvilView view = MenuType.ANVIL.create(p, Component.text(shortTitle));
@@ -58,7 +65,7 @@ public final class TextPrompt implements Listener {
         meta.displayName(Component.text(initial));
         paper.setItemMeta(meta);
         top.setItem(0, paper);
-        sessions.put(p.getUniqueId(), new Session(onDone, top));
+        sessions.put(p.getUniqueId(), new Session(onDone, onCancel, top));
     }
 
     private Session session(Player p, Inventory top) {
@@ -120,11 +127,17 @@ public final class TextPrompt implements Listener {
         if (result != null) {
             String r = result;
             Bukkit.getScheduler().runTask(plugin, () -> s.onDone.accept(r));
+        } else if (s.onCancel != null) {
+            Bukkit.getScheduler().runTask(plugin, s.onCancel);
         }
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
-        sessions.remove(e.getPlayer().getUniqueId());
+        Session s = sessions.remove(e.getPlayer().getUniqueId());
+        if (s != null) {
+            s.top.clear();
+            if (s.onCancel != null) Bukkit.getScheduler().runTask(plugin, s.onCancel);
+        }
     }
 }
