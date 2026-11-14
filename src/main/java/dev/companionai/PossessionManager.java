@@ -45,6 +45,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
@@ -212,6 +214,8 @@ public final class PossessionManager implements Listener {
         p.setCollidable(false);
         p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false, false));
         p.hideEntity(plugin, wolf);
+        noPushTeam().addEntry(p.getName());
+        noPushTeam().addEntry(wolf.getUniqueId().toString());
 
         applyForm(p, wolf);
         MonsterRig rig = plugin.monsters().rig(wolf);
@@ -223,6 +227,19 @@ public final class PossessionManager implements Listener {
         CompanionAI.info(p, "Você não vê o cachorro na sua tela (seu amigo vê). Para se ver no F5: /horror ver");
         if (s.sitting) CompanionAI.info(p, "Ele está SENTADO: aperte Shift para levantar.");
         if (plugin.monsters().isMonster(wolf)) CompanionAI.info(p, "Forma de MONSTRO: superforte, rápido e minera rápido.");
+    }
+
+    /**
+     * Time do placar com colisão desligada. A colisão entre você e o cachorro é calculada
+     * pelo seu próprio Minecraft; só um time com "collisionRule: never" faz ele parar de
+     * te empurrar quando você usa /horror ver.
+     */
+    private Team noPushTeam() {
+        Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
+        Team team = board.getTeam("cai_nopush");
+        if (team == null) team = board.registerNewTeam("cai_nopush");
+        team.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+        return team;
     }
 
     /** Ajusta tamanho/altura do jogador conforme forma (cachorro ou monstro). */
@@ -283,6 +300,10 @@ public final class PossessionManager implements Listener {
         if (s == null) return false;
         byWolf.remove(s.wolfId);
         removeBubble(s);
+
+        Team team = noPushTeam();
+        team.removeEntry(p.getName());
+        team.removeEntry(s.wolfId.toString());
 
         Wolf wolf = wolf(s);
         if (wolf != null) {

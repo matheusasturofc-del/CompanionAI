@@ -51,11 +51,11 @@ Digite `/horror` para ver a lista organizada (clique numa linha para escrever o 
 | Comando | O que faz |
 |---|---|
 | `/horror vanish` | Some/aparece com mensagem falsa de "saiu/entrou no jogo" |
-| `/horror painel` | Coloca o botão do painel no CANTO do inventário |
+| `/horror painel` | Coloca o botão do painel no último slot da hotbar |
 
 ## Painel
-Use `/horror painel`. O botão fica no **canto superior direito do inventário**:
-aperte **E** e clique nele. Também abre segurando o item e clicando com o botão esquerdo.
+Use `/horror painel`. O botão vai sempre para o **último slot da hotbar**:
+segure e clique com o botão esquerdo, ou aperte **E** e clique nele.
 O botão não cai no chão e volta se você morrer.
 
 - **Início**: status, categorias e atalhos rápidos.

@@ -67,7 +67,7 @@ final class HorrorCommand {
     };
     private static final String[][] HELP_OUTROS = {
             {"/horror vanish", "some/aparece com \"saiu/entrou no jogo\" falso"},
-            {"/horror painel", "coloca o botão do painel no canto do inventário"},
+            {"/horror painel", "coloca o botão do painel no último slot da hotbar"},
             {"/horror ajuda", "mostra esta lista"},
     };
 

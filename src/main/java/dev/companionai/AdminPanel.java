@@ -106,10 +106,10 @@ public final class AdminPanel implements Listener {
                 && item.getItemMeta().getPersistentDataContainer().has(plugin.panelKey());
     }
 
-    /** Canto superior direito do inventário (aperte E e clique). */
-    public static final int CORNER_SLOT = 17;
+    /** Último slot da hotbar (canto inferior direito do inventário). */
+    public static final int CORNER_SLOT = 8;
 
-    /** Coloca o botão do painel no canto do inventário (move o que estiver lá). */
+    /** Coloca o botão do painel no último slot da hotbar (move o que estiver lá). */
     public void givePanelItem(Player p) {
         PlayerInventory inv = p.getInventory();
         for (int i = 0; i < inv.getSize(); i++) {
@@ -120,8 +120,8 @@ public final class AdminPanel implements Listener {
         if (old != null && !old.getType().isAir()) {
             for (ItemStack left : inv.addItem(old).values()) p.getWorld().dropItem(p.getLocation(), left);
         }
-        CompanionAI.info(p, "Botão do painel no CANTO do inventário: aperte E e clique nele.");
-        CompanionAI.info(p, "Também funciona segurando ele e clicando com o botão esquerdo.");
+        CompanionAI.info(p, "Botão do painel no ÚLTIMO slot da hotbar.");
+        CompanionAI.info(p, "Segure e clique com o botão esquerdo, ou aperte E e clique nele.");
     }
 
     /** Aperte E e clique no botão do canto: abre o painel direto. */
