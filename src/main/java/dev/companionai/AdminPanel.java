@@ -195,6 +195,12 @@ public final class AdminPanel implements Listener {
                     openMain(p);
                 });
 
+        set(m, 17, Material.SPYGLASS, "Me ver como cachorro", NamedTextColor.AQUA,
+                "Mostra/esconde o cachorro na SUA tela", "Aperte F5 para se ver", () -> {
+                    if (!pos.toggleSelfView(p)) CompanionAI.error(p, "Você não está em um cachorro.");
+                    openMain(p);
+                });
+
         // --- Clima e tempo
         World w = p.getWorld();
         set(m, 19, Material.SUNFLOWER, "Sol", NamedTextColor.YELLOW, null, null, () -> weather(p, false, false));

@@ -114,6 +114,10 @@ final class HorrorCommand {
                         .executes(ctx -> player(ctx, p -> {
                             if (!plugin.possession().toggleSit(p, null)) CompanionAI.error(p, "Você não está em um cachorro.");
                         })))
+                .then(Commands.literal("ver")
+                        .executes(ctx -> player(ctx, p -> {
+                            if (!plugin.possession().toggleSelfView(p)) CompanionAI.error(p, "Você não está em um cachorro.");
+                        })))
                 .then(Commands.literal("vanish")
                         .executes(ctx -> player(ctx, p -> {
                             if (plugin.possession().isPossessing(p) && plugin.vanish().isHidden(p)) {
@@ -151,6 +155,7 @@ final class HorrorCommand {
                 "/horror rename <atual> to <novo>  - renomeia um cachorro",
                 "/horror monsterform [nome]  - liga/desliga a forma de monstro",
                 "/horror sentar  - senta/levanta (dentro do cachorro)",
+                "/horror ver  - mostra/esconde o cachorro na SUA tela (para ver no F5)",
                 "/horror vanish  - some/aparece com mensagem falsa de saiu/entrou",
                 "/horror painel  - pega o item do painel (clique esquerdo)",
         };

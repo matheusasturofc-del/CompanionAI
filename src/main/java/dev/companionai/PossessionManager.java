@@ -63,6 +63,8 @@ public final class PossessionManager implements Listener {
         final UUID controller;
         final UUID wolfId;
         boolean sitting;
+        /** Se true, o próprio jogador vê o cachorro (bom para olhar no F5). */
+        boolean selfVisible;
         // estado original do jogador
         double origScale;
         double origStep;
@@ -104,6 +106,38 @@ public final class PossessionManager implements Listener {
     public @Nullable Player controllerOf(Entity wolf) {
         UUID id = byWolf.get(wolf.getUniqueId());
         return id == null ? null : Bukkit.getPlayer(id);
+    }
+
+    /**
+     * Para quem as partes da cabeça do monstro devem ficar escondidas
+     * (o controlador, a menos que ele tenha ligado o modo "me ver").
+     */
+    public @Nullable Player hideHeadFor(Entity wolf) {
+        UUID id = byWolf.get(wolf.getUniqueId());
+        if (id == null) return null;
+        Session s = byController.get(id);
+        if (s == null || s.selfVisible) return null;
+        return Bukkit.getPlayer(id);
+    }
+
+    /** Liga/desliga ver o próprio cachorro (no F5). */
+    public boolean toggleSelfView(Player p) {
+        Session s = byController.get(p.getUniqueId());
+        if (s == null) return false;
+        Wolf wolf = wolf(s);
+        if (wolf == null) return false;
+        s.selfVisible = !s.selfVisible;
+        if (s.selfVisible) p.showEntity(plugin, wolf);
+        else p.hideEntity(plugin, wolf);
+        MonsterRig rig = plugin.monsters().rig(wolf);
+        if (rig != null) rig.setController(s.selfVisible ? null : p);
+        if (s.selfVisible) {
+            CompanionAI.info(p, "Agora você SE VÊ como cachorro. Aperte F5 para olhar.");
+            CompanionAI.info(p, "Em primeira pessoa a cabeça do cachorro pode tapar a visão: use /horror ver de novo para esconder.");
+        } else {
+            CompanionAI.info(p, "Cachorro escondido da sua tela de novo (seu amigo continua vendo).");
+        }
+        return true;
     }
 
     public @Nullable Wolf wolfOf(Player p) {
@@ -184,6 +218,7 @@ public final class PossessionManager implements Listener {
         String name = Dogs.displayName(wolf, plugin.getConfig().getString("nome-sem-nome", "???"));
         CompanionAI.info(p, "Você agora é o cachorro \"" + name + "\". Tudo que digitar no chat sai pela boca dele.");
         CompanionAI.info(p, "Para voltar: /horror sair (ou pelo painel).");
+        CompanionAI.info(p, "Você não vê o cachorro na sua tela (seu amigo vê). Para se ver no F5: /horror ver");
         if (s.sitting) CompanionAI.info(p, "Ele está SENTADO: você fica parado até o dono mandar levantar (ou /horror sentar).");
     }
 

@@ -59,7 +59,7 @@ public final class MonsterManager implements Listener {
         wolf.setSilent(true);
         wolf.setCustomNameVisible(false);
         rig.spawn(wolf.getLocation(), nameOf(wolf));
-        rig.setController(plugin.possession().controllerOf(wolf));
+        rig.setController(plugin.possession().hideHeadFor(wolf));
         plugin.possession().refreshForm(wolf);
         if (effects) {
             Location l = wolf.getLocation();
@@ -114,9 +114,8 @@ public final class MonsterManager implements Listener {
             }
             if (!rig.isSpawned() || rig.isBroken()) {
                 rig.spawn(wolf.getLocation(), nameOf(wolf));
-                Player c = plugin.possession().controllerOf(wolf);
                 rig.setController(null);
-                rig.setController(c);
+                rig.setController(plugin.possession().hideHeadFor(wolf));
             }
             rig.update(wolf.getLocation(), nameOf(wolf));
             if (growlChance > 0 && ThreadLocalRandom.current().nextInt(growlChance) == 0) {

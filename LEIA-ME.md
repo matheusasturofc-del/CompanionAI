@@ -18,6 +18,7 @@ um "mod de cachorro com IA".
 | `/horror rename <atual> to <novo>` | Renomeia um cachorro |
 | `/horror monsterform [nome]` | Liga/desliga a forma de monstro |
 | `/horror sentar` | Senta/levanta quando você está no cachorro |
+| `/horror ver` | Mostra/esconde o cachorro na SUA tela (para se ver no F5) |
 | `/horror vanish` | Some/aparece com mensagem falsa de "saiu/entrou no jogo" |
 | `/horror painel` | Dá o item do painel (segure e clique com o botão ESQUERDO) |
 
@@ -32,6 +33,12 @@ um "mod de cachorro com IA".
 - Quando ele domestica qualquer cachorro, abre uma tela para digitar o nome.
 - Para "aparecer" no final: `/horror sair` e depois `/horror vanish`
   (sai a mensagem "VocêNick entrou no jogo" e você aparece do lado dele).
+
+## Por que eu não me vejo como cachorro?
+De propósito: na sua tela o cachorro fica escondido, senão a cabeça dele tapa a câmera.
+Seu amigo vê o cachorro normalmente. Use `/horror ver` para se ver no F5.
+O bonequinho do inventário sempre mostra o seu personagem (nenhum plugin consegue
+trocar isso, só um mod no cliente).
 
 ## Configuração
 `plugins/CompanionAI/config.yml`: formato do chat, nome padrão, tempo do balão,
