@@ -211,7 +211,6 @@ public final class AdminPanel implements Listener {
                 List.of("Clima, hora do dia", "e congelar o tempo"), () -> openWorld(p));
 
         // Atalhos rápidos
-        label(m, 31, "Atalhos rápidos");
         if (myWolf == null) {
             button(m, 38, Material.BONE, "Virar cachorro novo", NamedTextColor.GREEN,
                     List.of("Vira um cachorro selvagem aqui"), () -> {
@@ -247,7 +246,6 @@ public final class AdminPanel implements Listener {
         vanishButton(m, 42, p, () -> openHome(p));
 
         button(m, SLOT_CLOSE, Material.SPRUCE_DOOR, "Fechar", NamedTextColor.GRAY, List.of(), p::closeInventory);
-        finish(m);
         p.openInventory(m.inventory);
     }
 
@@ -261,7 +259,6 @@ public final class AdminPanel implements Listener {
         statusItem(m, 4, p);
 
         // --- Linha: virar cachorro
-        label(m, 9, "Ser cachorro");
         button(m, 10, Material.WOLF_SPAWN_EGG, "Virar cachorro novo", NamedTextColor.GREEN,
                 List.of("Vira um cachorro selvagem aqui.", "Ele pode te domesticar com ossos."), () -> {
                     p.closeInventory();
@@ -295,7 +292,6 @@ public final class AdminPanel implements Listener {
                 });
 
         // --- Linha: monstro
-        label(m, 27, "Monstro");
         button(m, 28, Material.BONE_BLOCK, monster ? "Sair da monsterform" : "Virar monstro", NamedTextColor.DARK_RED,
                 List.of("No cachorro que você controla.",
                         "Superforte: mata em " + plugin.getConfig().getInt("monstro-hits-para-matar", 3) + " mordidas,",
@@ -326,7 +322,6 @@ public final class AdminPanel implements Listener {
                         }));
 
         nav(m, p, this::openHome);
-        finish(m);
         p.openInventory(m.inventory);
     }
 
@@ -350,7 +345,6 @@ public final class AdminPanel implements Listener {
             button(m, slot++, icon, Dogs.displayName(w, "sem nome"), NamedTextColor.GREEN, lore, () -> onPick.accept(w));
         }
         nav(m, p, pl -> back.run());
-        finish(m);
         p.openInventory(m.inventory);
     }
 
@@ -384,7 +378,6 @@ public final class AdminPanel implements Listener {
             slot++;
         }
         nav(m, p, this::openHome);
-        finish(m);
         p.openInventory(m.inventory);
     }
 
@@ -407,7 +400,6 @@ public final class AdminPanel implements Listener {
         };
 
         // --- Efeitos (2 linhas)
-        label(m, 9, "Efeitos");
         int[] fxSlots = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
         Effects[] all = Effects.values();
         for (int i = 0; i < all.length && i < fxSlots.length; i++) {
@@ -463,7 +455,6 @@ public final class AdminPanel implements Listener {
                 }));
 
         // --- Sustos (atalhos + tela com todos)
-        label(m, 36, "Sustos");
         button(m, 37, Material.CARVED_PUMPKIN, "Jumpscare", NamedTextColor.DARK_GREEN,
                 List.of("Som alto + tela tremendo", "+ texto vermelho"), () -> withTarget(tid, plugin.actions()::jumpscare));
         button(m, 38, Material.WITHER_SKELETON_SKULL, "Perseguidor", NamedTextColor.DARK_GREEN,
@@ -488,7 +479,6 @@ public final class AdminPanel implements Listener {
                 List.of("Sons (caverna, passos, porta,", "vidro, grito...), raio e mais"), () -> withTarget(tid, t -> openScares(p, t)));
 
         nav(m, p, this::openPlayers);
-        finish(m);
         p.openInventory(m.inventory);
     }
 
@@ -501,8 +491,6 @@ public final class AdminPanel implements Listener {
             if (t != null) openPlayer(pl, t);
             else openPlayers(pl);
         };
-
-        label(m, 9, "Sons");
         Material[] icons = {Material.SCULK_SENSOR, Material.LEATHER_BOOTS, Material.BONE_MEAL, Material.LIGHTNING_ROD,
                 Material.CARVED_PUMPKIN, Material.OAK_DOOR, Material.GLASS_PANE, Material.GHAST_TEAR};
         int[] slots = {10, 11, 12, 19, 20, 13, 14, 15};
@@ -515,7 +503,6 @@ public final class AdminPanel implements Listener {
                         CompanionAI.actionBar(p, sc.label + " em " + t.getName());
                     }));
         }
-        label(m, 18, "Visual");
         button(m, 21, Material.WITHER_SKELETON_SKULL, "Perseguidor", NamedTextColor.DARK_GREEN,
                 List.of("Monstro aparece ao longe e some", "quando ele olha"), () -> withTarget(tid, t -> {
                     if (plugin.stalkers().spawn(t)) CompanionAI.actionBar(p, "Perseguidor perto de " + t.getName());
@@ -530,8 +517,6 @@ public final class AdminPanel implements Listener {
                     Effects.CEGUEIRA.apply(t, 5, 1, false);
                     Effects.ESCURIDAO.apply(t, 7, 1, false);
                 }));
-
-        label(m, 27, "Texto");
         button(m, 28, Material.OAK_SIGN, "Mensagem na tela", NamedTextColor.DARK_GREEN,
                 List.of("Aparece grande só na tela dele"), () -> plugin.prompts().ask(p, "Mensagem na tela", "", msg ->
                         withTarget(tid, t -> plugin.actions().title(t, msg))));
@@ -540,7 +525,6 @@ public final class AdminPanel implements Listener {
                         withTarget(tid, t -> plugin.actions().whisper(p, t, msg))));
 
         nav(m, p, back);
-        finish(m);
         p.openInventory(m.inventory);
     }
 
@@ -549,13 +533,9 @@ public final class AdminPanel implements Listener {
     private void openWorld(Player p) {
         Menu m = menu("Mundo");
         World w = p.getWorld();
-
-        label(m, 9, "Clima");
         button(m, 11, Material.SUNFLOWER, "Sol", NamedTextColor.YELLOW, List.of("/horror clima sol"), () -> weather(p, "sol"));
         button(m, 12, Material.WATER_BUCKET, "Chuva", NamedTextColor.BLUE, List.of("/horror clima chuva"), () -> weather(p, "chuva"));
         button(m, 13, Material.LIGHTNING_ROD, "Tempestade", NamedTextColor.DARK_BLUE, List.of("/horror clima tempestade"), () -> weather(p, "tempestade"));
-
-        label(m, 27, "Hora");
         button(m, 29, Material.CLOCK, "Manhã", NamedTextColor.YELLOW, List.of("/horror hora manha"), () -> time(p, 1000));
         button(m, 30, Material.ORANGE_DYE, "Pôr do sol", NamedTextColor.GOLD, List.of("/horror hora pordosol"), () -> time(p, 12500));
         button(m, 31, Material.BLACK_DYE, "Meia-noite", NamedTextColor.DARK_GRAY, List.of("/horror hora meianoite"), () -> time(p, 18000));
@@ -569,7 +549,6 @@ public final class AdminPanel implements Listener {
                 });
 
         nav(m, p, this::openHome);
-        finish(m);
         p.openInventory(m.inventory);
     }
 
@@ -617,37 +596,6 @@ public final class AdminPanel implements Listener {
         button(m, SLOT_BACK, Material.ARROW, "Voltar", NamedTextColor.GRAY, List.of(), () -> back.accept(p));
         button(m, SLOT_CLOSE, Material.SPRUCE_DOOR, "Fechar", NamedTextColor.GRAY, List.of(), p::closeInventory);
         button(m, SLOT_HOME, Material.COMPASS, "Início", NamedTextColor.GRAY, List.of(), () -> openHome(p));
-    }
-
-    /** Preenche espaços vazios com vidro e borda escura. */
-    private static void finish(Menu m) {
-        ItemStack border = pane(Material.BLACK_STAINED_GLASS_PANE);
-        ItemStack inner = pane(Material.GRAY_STAINED_GLASS_PANE);
-        for (int i = 0; i < 54; i++) {
-            if (m.inventory.getItem(i) != null) continue;
-            int row = i / 9;
-            int col = i % 9;
-            boolean edge = row == 0 || row == 5 || col == 0 || col == 8;
-            m.inventory.setItem(i, edge ? border : inner);
-        }
-    }
-
-    private static ItemStack pane(Material mat) {
-        ItemStack it = new ItemStack(mat);
-        ItemMeta meta = it.getItemMeta();
-        meta.displayName(Component.text(" "));
-        meta.setHideTooltip(true);
-        it.setItemMeta(meta);
-        return it;
-    }
-
-    /** Placa de seção (vidro colorido com nome). */
-    private static void label(Menu m, int slot, String name) {
-        ItemStack it = new ItemStack(Material.PURPLE_STAINED_GLASS_PANE);
-        ItemMeta meta = it.getItemMeta();
-        meta.displayName(text("» " + name, NamedTextColor.LIGHT_PURPLE).decorate(TextDecoration.BOLD));
-        it.setItemMeta(meta);
-        m.inventory.setItem(slot, it);
     }
 
     private void statusItem(Menu m, int slot, Player p) {
