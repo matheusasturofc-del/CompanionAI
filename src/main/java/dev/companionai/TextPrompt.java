@@ -48,7 +48,9 @@ public final class TextPrompt implements Listener {
     }
 
     public void ask(Player p, String title, String initial, Consumer<String> onDone) {
-        AnvilView view = MenuType.ANVIL.create(p, Component.text(title));
+        // A janela da bigorna só cabe ~18 letras no título.
+        String shortTitle = title.length() > 18 ? title.substring(0, 17).trim() + "…" : title;
+        AnvilView view = MenuType.ANVIL.create(p, Component.text(shortTitle));
         p.openInventory(view);
         Inventory top = view.getTopInventory();
         ItemStack paper = new ItemStack(Material.PAPER);

@@ -565,7 +565,7 @@ public final class PossessionManager implements Listener {
     }
 
     private void askDogName(Player p, Wolf wolf) {
-        plugin.prompts().ask(p, "Dê um nome ao seu cachorro", "", name -> {
+        plugin.prompts().ask(p, "Nome do cachorro", "", name -> {
             if (!wolf.isValid()) return;
             plugin.monsters().setDogName(wolf, name);
         });

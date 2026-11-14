@@ -448,7 +448,7 @@ public final class AdminPanel implements Listener {
                 List.of("Som alto + tela tremendo", "+ texto vermelho"), () -> withTarget(tid, this::jumpscare));
         button(m, 42, Material.OAK_SIGN, "Mensagem na tela", NamedTextColor.DARK_GREEN,
                 List.of("Você digita, aparece grande", "só na tela dele"), () -> withTarget(tid, t ->
-                        plugin.prompts().ask(p, "Mensagem na tela de " + t.getName(), "", msg -> {
+                        plugin.prompts().ask(p, "Mensagem na tela", "", msg -> {
                             t.showTitle(Title.title(Component.text(msg, NamedTextColor.DARK_RED), Component.empty(),
                                     Title.Times.times(Duration.ofMillis(300), Duration.ofSeconds(3), Duration.ofSeconds(1))));
                             t.playSound(t.getLocation(), Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.6f, 0.6f);
@@ -456,7 +456,7 @@ public final class AdminPanel implements Listener {
                         })));
         button(m, 43, Material.PAPER, "Sussurro no chat", NamedTextColor.DARK_GREEN,
                 List.of("O cachorro manda uma mensagem", "que SÓ ele vê no chat"), () -> withTarget(tid, t ->
-                        plugin.prompts().ask(p, "Sussurro para " + t.getName(), "", msg -> {
+                        plugin.prompts().ask(p, "Sussurro no chat", "", msg -> {
                             Wolf w = plugin.possession().wolfOf(p);
                             String name = w != null ? Dogs.displayName(w, "???")
                                     : plugin.getConfig().getString("nome-sem-nome", "???");
@@ -508,7 +508,7 @@ public final class AdminPanel implements Listener {
     }
 
     private void askRename(Player p, Wolf w, Runnable after) {
-        plugin.prompts().ask(p, "Novo nome do cachorro", Dogs.displayName(w, ""), name -> {
+        plugin.prompts().ask(p, "Novo nome", Dogs.displayName(w, ""), name -> {
             if (!w.isValid()) return;
             plugin.monsters().setDogName(w, name);
             CompanionAI.info(p, "Cachorro renomeado para \"" + name + "\".");
