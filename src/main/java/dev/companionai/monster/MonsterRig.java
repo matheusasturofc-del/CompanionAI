@@ -39,6 +39,7 @@ public final class MonsterRig {
     private double twitchYaw;
     private double twitchRoll;
     private int talkTicks;
+    private int attackTicks;
     private double pitchDeg;
 
     MonsterRig(CompanionAI plugin) {
@@ -117,6 +118,11 @@ public final class MonsterRig {
         }
     }
 
+    /** Bote: cabeça avança e a boca abre toda (ataque ou rugido). */
+    public void attack() {
+        attackTicks = 8;
+    }
+
     /** Mexe a boca por alguns ticks (quando o cachorro "fala" na forma de monstro). */
     public void talk(int ticks) {
         talkTicks = Math.max(talkTicks, ticks);
@@ -151,6 +157,7 @@ public final class MonsterRig {
             }
         }
         if (talkTicks > 0) talkTicks--;
+        if (attackTicks > 0) attackTicks--;
 
         boolean moved = root.distanceSquared(last) > 1.0E-5 || Math.abs(root.getYaw() - last.getYaw()) > 0.1f;
         if (moved) {
@@ -175,6 +182,11 @@ public final class MonsterRig {
         double pitchRad = Math.toRadians(Math.max(-50, Math.min(55, pitchDeg)));
         double headPitch = 0.45 + pitchRad * 0.75;
         double jaw = talkTicks > 0 ? 0.15 + 0.4 * Math.abs(Math.sin(ticks * 0.9)) : (twitchTicks > 0 ? 0.45 : 0.15);
+        if (attackTicks > 0) {
+            double k = Math.sin(Math.PI * (8 - attackTicks) / 8.0);
+            headPitch += 0.5 * k;
+            jaw = 0.2 + 0.85 * k;
+        }
         double tail = Math.sin(ticks * 0.15) * 0.25;
         return MonsterPose.compute(phase, amp, headPitch, twitchYaw, twitchRoll, jaw, tail);
     }

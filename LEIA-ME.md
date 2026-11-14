@@ -17,8 +17,11 @@ um "mod de cachorro com IA".
 | `/horror sair` | Sai do cachorro (continua invisível) |
 | `/horror rename <atual> to <novo>` | Renomeia um cachorro |
 | `/horror monsterform [nome]` | Liga/desliga a forma de monstro |
-| `/horror sentar` | Senta/levanta quando você está no cachorro |
+| `/horror sentar` | Senta/levanta quando você está no cachorro (ou aperte **Shift**) |
 | `/horror ver` | Mostra/esconde o cachorro na SUA tela (para se ver no F5) |
+| `/horror rugir` | Rugido do monstro: som alto + escuridão em quem está perto |
+| `/horror efeito <jogador> <efeito> [segundos] [nível]` | Dá um efeito (0 segundos = infinito) |
+| `/horror limpar <jogador>` | Tira todos os efeitos dele |
 | `/horror vanish` | Some/aparece com mensagem falsa de "saiu/entrou no jogo" |
 | `/horror painel` | Dá o item do painel (segure e clique com o botão ESQUERDO) |
 
@@ -33,6 +36,24 @@ um "mod de cachorro com IA".
 - Quando ele domestica qualquer cachorro, abre uma tela para digitar o nome.
 - Para "aparecer" no final: `/horror sair` e depois `/horror vanish`
   (sai a mensagem "VocêNick entrou no jogo" e você aparece do lado dele).
+
+## Monsterform
+- Você **quebra blocos** (com Pressa II) e **morde jogadores** (6 de dano = 3 corações por padrão).
+- O monstro dá um bote (cabeça avança, boca abre) a cada mordida.
+- Se alguém morrer para você, a mensagem é "Fulano foi morto por <nome do cachorro>", nunca o seu nick.
+- Dica: troque de slot antes de quebrar blocos (com o item do painel na mão o clique abre o menu).
+
+## Efeitos disponíveis
+cegueira, escuridao, nausea, lentidao, cansaco, fraqueza, fome, veneno, wither,
+levitacao, brilho, pulo, velocidade, visao
+
+## Painel
+- **Início**: status, categorias e atalhos rápidos.
+- **Cachorro & Monstro**: virar/entrar/sair, sentar, me ver (F5), renomear, monsterform, rugir.
+- **Jogadores** → escolha alguém: efeitos (com duração e nível), tirar efeitos, TP até ele,
+  trazer ele até você, olhar fixo, e sustos (caverna, passos, rosnado, raio, jumpscare,
+  mensagem na tela, sussurro no chat que só ele vê).
+- **Mundo**: clima, hora, congelar a hora.
 
 ## Por que eu não me vejo como cachorro?
 De propósito: na sua tela o cachorro fica escondido, senão a cabeça dele tapa a câmera.

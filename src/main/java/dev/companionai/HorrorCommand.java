@@ -7,6 +7,10 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -114,6 +118,32 @@ final class HorrorCommand {
                         .executes(ctx -> player(ctx, p -> {
                             if (!plugin.possession().toggleSit(p, null)) CompanionAI.error(p, "Você não está em um cachorro.");
                         })))
+                .then(Commands.literal("rugir")
+                        .executes(ctx -> player(ctx, p -> {
+                            if (!plugin.possession().roar(p)) CompanionAI.error(p, "Só funciona na forma de monstro.");
+                        })))
+                .then(Commands.literal("efeito")
+                        .then(Commands.argument("jogador", ArgumentTypes.player())
+                                .then(Commands.argument("efeito", StringArgumentType.word())
+                                        .suggests((ctx, b) -> {
+                                            for (Effects e : Effects.values()) if (e.key().startsWith(b.getRemainingLowerCase())) b.suggest(e.key());
+                                            return b.buildFuture();
+                                        })
+                                        .executes(ctx -> effect(plugin, ctx, 30, 1))
+                                        .then(Commands.argument("segundos", IntegerArgumentType.integer(0, 3600))
+                                                .executes(ctx -> effect(plugin, ctx, IntegerArgumentType.getInteger(ctx, "segundos"), 1))
+                                                .then(Commands.argument("nivel", IntegerArgumentType.integer(1, 10))
+                                                        .executes(ctx -> effect(plugin, ctx,
+                                                                IntegerArgumentType.getInteger(ctx, "segundos"),
+                                                                IntegerArgumentType.getInteger(ctx, "nivel"))))))))
+                .then(Commands.literal("limpar")
+                        .then(Commands.argument("jogador", ArgumentTypes.player())
+                                .executes(ctx -> {
+                                    Player t = target(ctx);
+                                    Effects.clearAll(t);
+                                    CompanionAI.info(ctx.getSource().getSender(), "Efeitos de " + t.getName() + " removidos.");
+                                    return Command.SINGLE_SUCCESS;
+                                })))
                 .then(Commands.literal("ver")
                         .executes(ctx -> player(ctx, p -> {
                             if (!plugin.possession().toggleSelfView(p)) CompanionAI.error(p, "Você não está em um cachorro.");
@@ -130,6 +160,25 @@ final class HorrorCommand {
                 .then(Commands.literal("painel")
                         .executes(ctx -> player(ctx, p -> plugin.panel().givePanelItem(p))))
                 .build();
+    }
+
+    private static Player target(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        return ctx.getArgument("jogador", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource()).get(0);
+    }
+
+    private static int effect(CompanionAI plugin, CommandContext<CommandSourceStack> ctx, int seconds, int level)
+            throws CommandSyntaxException {
+        CommandSender s = ctx.getSource().getSender();
+        Player t = target(ctx);
+        String key = StringArgumentType.getString(ctx, "efeito");
+        Effects fx = Effects.byKey(key);
+        if (fx == null) {
+            CompanionAI.error(s, "Efeito desconhecido: " + key);
+            return 0;
+        }
+        fx.apply(t, seconds, level, plugin.getConfig().getBoolean("efeitos-mostrar-icone", false));
+        CompanionAI.info(s, fx.label + " em " + t.getName() + " por " + AdminPanel.durationText(seconds) + " (nível " + level + ").");
+        return Command.SINGLE_SUCCESS;
     }
 
     private static void toggleMonster(CompanionAI plugin, Player p, Wolf w) {
@@ -154,8 +203,11 @@ final class HorrorCommand {
                 "/horror sair  - volta ao normal (continua invisível)",
                 "/horror rename <atual> to <novo>  - renomeia um cachorro",
                 "/horror monsterform [nome]  - liga/desliga a forma de monstro",
-                "/horror sentar  - senta/levanta (dentro do cachorro)",
+                "/horror sentar  - senta/levanta (dentro do cachorro) - ou aperte Shift",
                 "/horror ver  - mostra/esconde o cachorro na SUA tela (para ver no F5)",
+                "/horror rugir  - rugido do monstro (escuridão em quem está perto)",
+                "/horror efeito <jogador> <efeito> [segundos] [nível]  - 0 segundos = infinito",
+                "/horror limpar <jogador>  - tira todos os efeitos dele",
                 "/horror vanish  - some/aparece com mensagem falsa de saiu/entrou",
                 "/horror painel  - pega o item do painel (clique esquerdo)",
         };

@@ -25,3 +25,21 @@ escala-monstro: 1.73
 
 # O monstro rosna sozinho de vez em quando? (1 em N por tick, 0 = nunca)
 monstro-rosnado-chance: 300
+
+# ---------------- Forma de monstro ----------------
+# Na forma de monstro voce pode quebrar blocos?
+monstro-quebra-blocos: true
+# Dano de cada mordida do monstro (2 = 1 coracao)
+monstro-dano: 6.0
+# Nivel de Pressa (quebrar blocos rapido) e Velocidade do monstro (0 = desligado)
+monstro-pressa: 2
+monstro-velocidade: 1
+
+# ---------------- Forma de cachorro ----------------
+# Na forma de cachorro (normal) voce pode morder?
+cachorro-morde: false
+cachorro-dano: 2.0
+
+# ---------------- Efeitos ----------------
+# Mostrar o icone do efeito na tela dele? (false = ele nao sabe o que e)
+efeitos-mostrar-icone: false

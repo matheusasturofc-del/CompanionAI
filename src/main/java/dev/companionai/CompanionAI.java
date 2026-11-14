@@ -26,6 +26,9 @@ public final class CompanionAI extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        // Adiciona opcoes novas em configs antigas sem apagar o que voce mudou.
+        getConfig().options().copyDefaults(true);
+        saveConfig();
 
         panelKey = new NamespacedKey(this, "painel");
         possessedKey = new NamespacedKey(this, "possuido");

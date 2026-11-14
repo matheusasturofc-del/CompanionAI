@@ -37,6 +37,8 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -219,7 +221,8 @@ public final class PossessionManager implements Listener {
         CompanionAI.info(p, "Você agora é o cachorro \"" + name + "\". Tudo que digitar no chat sai pela boca dele.");
         CompanionAI.info(p, "Para voltar: /horror sair (ou pelo painel).");
         CompanionAI.info(p, "Você não vê o cachorro na sua tela (seu amigo vê). Para se ver no F5: /horror ver");
-        if (s.sitting) CompanionAI.info(p, "Ele está SENTADO: você fica parado até o dono mandar levantar (ou /horror sentar).");
+        if (s.sitting) CompanionAI.info(p, "Ele está SENTADO: aperte Shift para levantar.");
+        if (plugin.monsters().isMonster(wolf)) CompanionAI.info(p, "Forma de MONSTRO: você quebra blocos e machuca jogadores.");
     }
 
     /** Ajusta tamanho/altura do jogador conforme forma (cachorro ou monstro). */
@@ -232,6 +235,41 @@ public final class PossessionManager implements Listener {
         if (a != null) a.setBaseValue(scale);
         AttributeInstance step = p.getAttribute(Attribute.GENERIC_STEP_HEIGHT);
         if (step != null) step.setBaseValue(monster ? 1.1 : 0.6);
+
+        // Monstro: quebra blocos rápido e corre um pouco mais.
+        p.removePotionEffect(PotionEffectType.HASTE);
+        p.removePotionEffect(PotionEffectType.SPEED);
+        if (monster) {
+            int haste = plugin.getConfig().getInt("monstro-pressa", 2);
+            int speed = plugin.getConfig().getInt("monstro-velocidade", 1);
+            if (haste > 0) p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, PotionEffect.INFINITE_DURATION, haste - 1, false, false, false));
+            if (speed > 0) p.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, speed - 1, false, false, false));
+        }
+    }
+
+    /** O jogador está dentro de um cachorro que está na forma de monstro? */
+    public boolean isMonsterController(Player p) {
+        Wolf w = wolfOf(p);
+        return w != null && plugin.monsters().isMonster(w);
+    }
+
+    /** Rugido do monstro: som alto e escuridão rápida em quem estiver perto. */
+    public boolean roar(Player p) {
+        Wolf wolf = wolfOf(p);
+        if (wolf == null || !plugin.monsters().isMonster(wolf)) return false;
+        Location l = wolf.getLocation();
+        l.getWorld().playSound(l, Sound.ENTITY_WARDEN_ROAR, 2f, 0.8f);
+        l.getWorld().playSound(l, Sound.ENTITY_WOLF_GROWL, 2f, 0.5f);
+        for (Player o : l.getWorld().getPlayers()) {
+            if (o.equals(p) || o.getLocation().distanceSquared(l) > 24 * 24) continue;
+            o.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 80, 0, false, false, false));
+        }
+        MonsterRig rig = plugin.monsters().rig(wolf);
+        if (rig != null) {
+            rig.attack();
+            rig.talk(30);
+        }
+        return true;
     }
 
     /** Chamado quando o monstro liga/desliga num cachorro. */
@@ -265,6 +303,8 @@ public final class PossessionManager implements Listener {
         p.setInvulnerable(s.origInvulnerable);
         p.setCollidable(s.origCollidable);
         if (!s.hadInvisibility) p.removePotionEffect(PotionEffectType.INVISIBILITY);
+        p.removePotionEffect(PotionEffectType.HASTE);
+        p.removePotionEffect(PotionEffectType.SPEED);
 
         if (feedback) {
             CompanionAI.info(p, "Você voltou ao normal. Ainda está invisível para os outros.");
@@ -287,10 +327,13 @@ public final class PossessionManager implements Listener {
         if (wolf == null) return false;
         s.sitting = !s.sitting;
         wolf.setSitting(s.sitting);
-        String who = byWho == null ? "Você" : byWho;
-        CompanionAI.actionBar(controller, s.sitting
-                ? who + " mandou você SENTAR (fique parado)"
-                : who + " mandou você LEVANTAR");
+        if (byWho == null) {
+            CompanionAI.actionBar(controller, s.sitting ? "Você SENTOU (Shift para levantar)" : "Você LEVANTOU");
+        } else {
+            CompanionAI.actionBar(controller, s.sitting
+                    ? byWho + " mandou você SENTAR (fique parado)"
+                    : byWho + " mandou você LEVANTAR");
+        }
         return true;
     }
 
@@ -551,8 +594,48 @@ public final class PossessionManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onAttack(EntityDamageByEntityEvent e) {
-        // Um jogador invisível batendo em alguém entregaria a brincadeira.
-        if (byController.containsKey(e.getDamager().getUniqueId())) e.setCancelled(true);
+        if (!(e.getDamager() instanceof Player p)) return;
+        Session s = byController.get(p.getUniqueId());
+        if (s == null) return;
+        Wolf wolf = wolf(s);
+        if (wolf == null || e.getEntity().equals(wolf)) {
+            e.setCancelled(true);
+            return;
+        }
+        if (plugin.monsters().isMonster(wolf)) {
+            // Monstro morde de verdade.
+            e.setDamage(plugin.getConfig().getDouble("monstro-dano", 6.0));
+            wolf.getWorld().playSound(wolf.getLocation(), Sound.ENTITY_WOLF_GROWL, 1.2f, 0.5f);
+            wolf.getWorld().playSound(e.getEntity().getLocation(), Sound.ENTITY_EVOKER_FANGS_ATTACK, 1f, 0.6f);
+            MonsterRig rig = plugin.monsters().rig(wolf);
+            if (rig != null) rig.attack();
+        } else if (plugin.getConfig().getBoolean("cachorro-morde", false)) {
+            e.setDamage(plugin.getConfig().getDouble("cachorro-dano", 2.0));
+            wolf.getWorld().playSound(wolf.getLocation(), Sound.ENTITY_WOLF_GROWL, 1f, 1.1f);
+        } else {
+            // Cachorro normal não bate (um "golpe invisível" entregaria a brincadeira).
+            e.setCancelled(true);
+        }
+    }
+
+    /** Se você matar alguém, a mensagem de morte cita o cachorro/monstro, nunca você. */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerKilled(PlayerDeathEvent e) {
+        Player killer = e.getEntity().getKiller();
+        if (killer == null) return;
+        Wolf wolf = wolfOf(killer);
+        if (wolf == null) return;
+        String name = Dogs.displayName(wolf, plugin.getConfig().getString("nome-sem-nome", "???"));
+        e.deathMessage(Component.translatable("death.attack.mob", e.getEntity().displayName(), Component.text(name)));
+    }
+
+    /** Shift = sentar/levantar por conta própria. */
+    @EventHandler(ignoreCancelled = true)
+    public void onSneak(PlayerToggleSneakEvent e) {
+        if (!e.isSneaking()) return;
+        Player p = e.getPlayer();
+        if (!byController.containsKey(p.getUniqueId())) return;
+        toggleSit(p, null);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -562,7 +645,10 @@ public final class PossessionManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBreak(BlockBreakEvent e) {
-        if (byController.containsKey(e.getPlayer().getUniqueId())) e.setCancelled(true);
+        Player p = e.getPlayer();
+        if (!byController.containsKey(p.getUniqueId())) return;
+        boolean allowed = isMonsterController(p) && plugin.getConfig().getBoolean("monstro-quebra-blocos", true);
+        if (!allowed) e.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true)
